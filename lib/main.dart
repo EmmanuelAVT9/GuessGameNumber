@@ -39,11 +39,17 @@ class _MyHomePageState extends State<MyHomePage> {
   late int _attemptsLeft;
   late int _maxNumber;
   late int _maxAttempts;
-  List<int> _history = [];
-  List<int> _greaterNumbers = [];
-  List<int> _lesserNumbers = [];
+  final List<int> _history = [];
+  //Lista que guarda numeros mayores
+  final List<int> _greaterNumbers = [];
+  //Lista que guarda numeros menores
+  final List<int> _lesserNumbers = [];
   String _message = '';
   double _difficulty = 0;
+
+  String _messageText = '';
+  Color _messageColor = Colors.black; // Color por defecto
+  //bool _showConfettiAnimation = false; // variable para controlar la animación de confeti
 
   @override
   void initState() {
@@ -77,6 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _greaterNumbers.clear();
     _lesserNumbers.clear();
     _message = '';
+    _messageText = '';
     _controller.clear();
   }
 
@@ -84,7 +91,8 @@ class _MyHomePageState extends State<MyHomePage> {
     int? guess = int.tryParse(_controller.text);
     if (guess == null) {
       setState(() {
-        _message = 'Por favor, ingresa un número válido.';
+        //_message = 'Por favor, ingresa un número válido.';
+        _messageText = 'Por favor, ingresa un número válido.';
       });
       return;
     }
@@ -92,15 +100,28 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _history.add(guess);
       _attemptsLeft--;
+      const Color successColor = Colors.green;
+      const Color failureColor = Colors.red;
+      const Color infoColor = Colors.blue;
 
       if (guess == _targetNumber) {
-        _message = '¡Felicidades! Adivinaste el número.';
+        _messageText = '¡Felicidades! Adivinaste el número.';
+        _messageColor = successColor;
+        //_showConfettiAnimation = true;
       } else if (_attemptsLeft == 0) {
-        _message = 'Lo siento, no te quedan intentos. El número era $_targetNumber.';
+        _messageText = 'Lo siento, no te quedan intentos. El número era $_targetNumber.';
+        _messageColor = failureColor;
+        //_showConfettiAnimation = false;
       } else if (guess < _targetNumber) {
-        _message = 'El número es mayor.';
+        _messageText = 'El número es mayor.';
+        _messageColor = failureColor;
+        //_showConfettiAnimation = false;
+        //_lesserNumbers.add(guess);
       } else {
-        _message = 'El número es menor.';
+        _messageText = 'El número es menor.';
+        _messageColor = failureColor;
+        //_showConfettiAnimation = false;
+        //_greaterNumbers.add(guess);
       }
     });
   }
@@ -109,13 +130,15 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Adivina el Número'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text('Adivina el Número'),
       ),
-      drawer: HamburgerMenu(),
+      endDrawer: HamburgerMenu(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            const SizedBox(width: 20),
             Row(
               children: [
                 Expanded(
@@ -144,17 +167,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ],
             ),
-            /**TextField(
-              controller: _controller,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: 'Ingresa un número'),
-            ),**/
-            SizedBox(width: 20), // Espacio horizontal entre columnas
+            const SizedBox(width: 20), // Espacio horizontal entre columnas
             ElevatedButton(
               onPressed: _checkGuess,
               child: Text('Adivinar'),
             ),
-            Text(_message),
+            Text(
+              _messageText,
+              style: TextStyle(color: _messageColor),
+            ),
             const Row(
               children: [
                 Expanded(
@@ -173,8 +194,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ],
             ),
-            Text('Historial'),
-            Expanded(
+            const Text('Historial'),
+            _history.isEmpty
+                ? SizedBox(
+                  height: 100, // Altura mínima cuando el historial está vacío
+                    child: Center(
+                      child: Text('No hay historial'),
+              ),
+            )
+                : Expanded(
               child: ListView.builder(
                 itemCount: _history.length,
                 itemBuilder: (context, index) {
@@ -188,7 +216,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           color: Colors.grey.withOpacity(0.5),
                           spreadRadius: 2,
                           blurRadius: 5,
-                          offset: Offset(0, 3), // Cambia la posición de la sombra
+                          offset: Offset(0, 3), // sombra card
                         ),
                       ],
                     ),
