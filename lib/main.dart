@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:game_guess_number/widgets/hamburguer_menu.dart';
+import 'package:game_guess_number/widgets/custom_botton_navigation_bar.dart';
+import 'package:game_guess_number/widgets/reusable_button.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,43 +14,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Guess Game Number',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Adivina el Nùmero'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -55,71 +34,188 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final TextEditingController _controller = TextEditingController();
+  late int _targetNumber;
+  late int _attemptsLeft;
+  late int _maxNumber;
+  late int _maxAttempts;
+  List<int> _history = [];
+  List<int> _greaterNumbers = [];
+  List<int> _lesserNumbers = [];
+  String _message = '';
+  double _difficulty = 0;
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    _setDifficulty(0);
+  }
+
+  void _setDifficulty(double value) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _difficulty = value;
+      if (_difficulty == 0) {
+        _maxNumber = 10;
+        _maxAttempts = 5;
+      } else if (_difficulty == 1) {
+        _maxNumber = 20;
+        _maxAttempts = 8;
+      } else if (_difficulty == 2) {
+        _maxNumber = 100;
+        _maxAttempts = 15;
+      } else if (_difficulty == 3) {
+        _maxNumber = 1000;
+        _maxAttempts = 25;
+      }
+      _resetGame();
+    });
+  }
+  void _resetGame() {
+    _targetNumber = (1 + (_maxNumber * (new DateTime.now().millisecondsSinceEpoch % 1000) / 1000)).toInt();
+    _attemptsLeft = _maxAttempts;
+    _history.clear();
+    _greaterNumbers.clear();
+    _lesserNumbers.clear();
+    _message = '';
+    _controller.clear();
+  }
+
+  void _checkGuess() {
+    int? guess = int.tryParse(_controller.text);
+    if (guess == null) {
+      setState(() {
+        _message = 'Por favor, ingresa un número válido.';
+      });
+      return;
+    }
+
+    setState(() {
+      _history.add(guess);
+      _attemptsLeft--;
+
+      if (guess == _targetNumber) {
+        _message = '¡Felicidades! Adivinaste el número.';
+      } else if (_attemptsLeft == 0) {
+        _message = 'Lo siento, no te quedan intentos. El número era $_targetNumber.';
+      } else if (guess < _targetNumber) {
+        _message = 'El número es mayor.';
+      } else {
+        _message = 'El número es menor.';
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('Adivina el Número'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      drawer: HamburgerMenu(),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _controller,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Ingresa un número',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.0), // Bordes redondeados
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Intentos restantes: $_attemptsLeft'),
+                      Text('$_attemptsLeft')
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            /**TextField(
+              controller: _controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: 'Ingresa un número'),
+            ),**/
+            SizedBox(width: 20), // Espacio horizontal entre columnas
+            ElevatedButton(
+              onPressed: _checkGuess,
+              child: Text('Adivinar'),
+            ),
+            Text(_message),
+            const Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Números menores'),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Números mayores'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Text('Historial'),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _history.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12.0), // Bordes redondeados
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3), // Cambia la posición de la sombra
+                        ),
+                      ],
+                    ),
+                    child: ListTile(
+                      title: Text('Intento ${index + 1}: ${_history[index]}'),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Slider(
+              value: _difficulty,
+              min: 0,
+              max: 3,
+              divisions: 3,
+              label: _difficulty == 0
+                  ? 'Fácil'
+                  : _difficulty == 1
+                  ? 'Medio'
+                  : _difficulty == 2
+                  ? 'Avanzado'
+                  : 'Extremo',
+              onChanged: _setDifficulty,
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
