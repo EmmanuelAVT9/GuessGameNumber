@@ -1,3 +1,5 @@
+import 'dart:math';  // Importa la clase Random
+
 import 'package:flutter/material.dart';
 import 'package:game_guess_number/widgets/hamburguer_menu.dart';
 import 'package:game_guess_number/widgets/custom_botton_navigation_bar.dart';
@@ -10,7 +12,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Adivina el Nùmero'),
+      home: const MyHomePage(title: 'Adivina el Número'),
     );
   }
 }
@@ -40,16 +41,13 @@ class _MyHomePageState extends State<MyHomePage> {
   late int _maxNumber;
   late int _maxAttempts;
   final List<int> _history = [];
-  //Lista que guarda numeros mayores
   final List<int> _greaterNumbers = [];
-  //Lista que guarda numeros menores
   final List<int> _lesserNumbers = [];
   String _message = '';
   double _difficulty = 0;
 
   String _messageText = '';
-  Color _messageColor = Colors.black; // Color por defecto
-  //bool _showConfettiAnimation = false; // variable para controlar la animación de confeti
+  Color _messageColor = Colors.black;
 
   @override
   void initState() {
@@ -57,6 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _setDifficulty(0);
   }
 
+  // Función para ajustar la dificultad y los límites
   void _setDifficulty(double value) {
     setState(() {
       _difficulty = value;
@@ -76,8 +75,21 @@ class _MyHomePageState extends State<MyHomePage> {
       _resetGame();
     });
   }
-  void _resetGame() {
-    _targetNumber = (1 + (_maxNumber * (new DateTime.now().millisecondsSinceEpoch % 1000) / 1000)).toInt();
+
+  // Nueva función para generar el número aleatorio dependiendo de los límites
+  void _generateRandomNumber({int? customMax, int? customMin}) {
+    Random random = Random();
+
+    int minNumber = customMin ?? 1;  // Usa 1 como mínimo si no se pasa customMin
+    int maxNumber = customMax ?? _maxNumber;  // Usa _maxNumber si no se pasa customMax
+
+    // Generar el número aleatorio en el rango [minNumber, maxNumber]
+    _targetNumber = random.nextInt(maxNumber - minNumber + 1) + minNumber;
+  }
+
+  // Función para reiniciar el juego
+  void _resetGame({int? customMax, int? customMin}) {
+    _generateRandomNumber(customMax: customMax, customMin: customMin);  // Genera el número objetivo
     _attemptsLeft = _maxAttempts;
     _history.clear();
     _greaterNumbers.clear();
@@ -87,11 +99,11 @@ class _MyHomePageState extends State<MyHomePage> {
     _controller.clear();
   }
 
+  // Función para verificar el número ingresado por el usuario
   void _checkGuess() {
     int? guess = int.tryParse(_controller.text);
     if (guess == null) {
       setState(() {
-        //_message = 'Por favor, ingresa un número válido.';
         _messageText = 'Por favor, ingresa un número válido.';
       });
       return;
@@ -107,21 +119,17 @@ class _MyHomePageState extends State<MyHomePage> {
       if (guess == _targetNumber) {
         _messageText = '¡Felicidades! Adivinaste el número.';
         _messageColor = successColor;
-        //_showConfettiAnimation = true;
       } else if (_attemptsLeft == 0) {
         _messageText = 'Lo siento, no te quedan intentos. El número era $_targetNumber.';
         _messageColor = failureColor;
-        //_showConfettiAnimation = false;
       } else if (guess < _targetNumber) {
         _messageText = 'El número es mayor.';
         _messageColor = failureColor;
-        //_showConfettiAnimation = false;
-        //_lesserNumbers.add(guess);
+        _lesserNumbers.add(guess);
       } else {
         _messageText = 'El número es menor.';
         _messageColor = failureColor;
-        //_showConfettiAnimation = false;
-        //_greaterNumbers.add(guess);
+        _greaterNumbers.add(guess);
       }
     });
   }
@@ -150,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         decoration: InputDecoration(
                           labelText: 'Ingresa un número',
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12.0), // Bordes redondeados
+                            borderRadius: BorderRadius.circular(12.0),
                           ),
                         ),
                       ),
@@ -161,16 +169,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Column(
                     children: [
                       Text('Intentos restantes: $_attemptsLeft'),
-                      Text('$_attemptsLeft')
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 20), // Espacio horizontal entre columnas
+            const SizedBox(width: 20),
             ElevatedButton(
               onPressed: _checkGuess,
-              child: Text('Adivinar'),
+              child: const Text('Adivinar'),
             ),
             Text(
               _messageText,
@@ -196,10 +203,10 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const Text('Historial'),
             _history.isEmpty
-                ? SizedBox(
-                  height: 100, // Altura mínima cuando el historial está vacío
-                    child: Center(
-                      child: Text('No hay historial'),
+                ? const SizedBox(
+              height: 100,
+              child: Center(
+                child: Text('No hay historial'),
               ),
             )
                 : Expanded(
@@ -207,16 +214,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 itemCount: _history.length,
                 itemBuilder: (context, index) {
                   return Container(
-                    margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                    margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12.0), // Bordes redondeados
+                      borderRadius: BorderRadius.circular(12.0),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.5),
                           spreadRadius: 2,
                           blurRadius: 5,
-                          offset: Offset(0, 3), // sombra card
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
